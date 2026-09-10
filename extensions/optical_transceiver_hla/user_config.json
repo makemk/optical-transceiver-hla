@@ -1,0 +1,24 @@
+{
+  "_readme": [
+    "本文件用于覆盖解码器的默认行为。改完在 Logic 2 里按 Ctrl+R 即可生效。",
+    "",
+    "取值约定：\"auto\" = 从抓包里自动推断，推断不出来时用内置默认值；",
+    "填具体值 = 强制使用，忽略抓包内容。删掉某个键 = 用内置默认值。",
+    "",
+    "以 _ 开头的键是注释，会被忽略。文件写坏了解码器会记日志并整体回退到默认值，不会崩。",
+    "各项含义见 README 的「不确定性配置」一节。"
+  ],
+
+  "aux_monitor_functions": {
+    "aux1": "auto",
+    "aux2": "auto",
+    "aux3": "auto",
+    "custom": "custom"
+  },
+
+  "tx_bias_scaling": "auto",
+
+  "lane_count": "auto",
+
+  "show_assumption_caveats": true
+}

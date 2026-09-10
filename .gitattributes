@@ -1,0 +1,10 @@
+# 统一换行符为 LF，避免在 Windows / macOS / Linux 之间协作时
+# 整个仓库被显示成「已修改」。
+* text=auto eol=lf
+
+# Saleae 抓包是二进制格式。显式声明，避免被当作文本做换行符转换而损坏。
+*.sal binary
+*.zip binary
+
+# 基线 CSV 保持 LF：它是逐行 diff 的对象，换行符不一致会污染比对结果。
+*.csv text eol=lf

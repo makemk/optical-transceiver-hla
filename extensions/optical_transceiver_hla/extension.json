@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "apiVersion": "1.0.0",
+  "author": "Antigravity",
+  "name": "Optical Transceiver Decoder",
+  "description": "Decodes optical transceiver protocols (CMIS, SFF-8472 SFP DDM, SFF-8436 QSFP) on I2C bus.",
+  "extensions": {
+    "Optical Transceiver Decoder": {
+      "type": "HighLevelAnalyzer",
+      "entryPoint": "optical_hla.OpticalTransceiverHla"
+    }
+  }
+}
+

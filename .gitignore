@@ -1,0 +1,31 @@
+# 本文件定义仓库边界：什么进版本库，什么只是本地产物。
+#
+# 仓库里只放「源」：插件代码、测试、工具、文档、样例数据。
+# 一切「生成出来的东西」都不进 —— 它们要么能由源码重新生成，要么是本机环境特有的。
+
+# 本地工作区：旧抓包、解码结果、打包产物、历史基线
+_local/
+
+# Logic 2 运行时日志。
+# 每次分析都会重写，且内容是被测模块的实时解码轨迹，属于运行时产物而非源码。
+*.log
+*.log.[0-9]
+
+# Python 字节码缓存
+__pycache__/
+*.py[cod]
+
+# 测试脚本的生成物（tools/test_optical_simulation.py 会重新生成）
+optical_simulation_decoded.csv
+
+# 打包产物（由 tools/package_extension.py 生成到 _local/）
+*.zip
+
+# 编辑器与操作系统
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# 注意：samples/ 里的抓包与回归基线是**有意入库**的 ——
+# 没有真实数据的话，别人克隆下来无法跑回归测试。
