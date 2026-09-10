@@ -11,6 +11,12 @@ WR 0x50 pg10 2B  | Page Select -> Page 0x10
 RD 0x50 pg10 33B | DP Deinit Lanes: 0x00 (initialize all lanes) | ApplyDPInit: no lanes selected | ...
 ```
 
+![在 Logic 2 中解码 CMIS 抓包](docs/images/decoding-in-logic2.png)
+
+*在 Logic 2 里解码真实 QSFP-DD 模块抓包：右侧 **Analyzers** 面板显示 `I2C` 与本插件已挂载，
+左上方是插件解出的字段气泡，右侧 **Data** 表列出了逐字节的 `optical_field` / `optical_event` 行。
+（`OpticalPowerTx1: -40.00` 是模块处于低功耗态时的读数，非异常。）*
+
 ---
 
 ## 功能概览
