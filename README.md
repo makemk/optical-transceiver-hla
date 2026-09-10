@@ -30,12 +30,26 @@ RD 0x50 pg10 33B | DP Deinit Lanes: 0x00 (initialize all lanes) | ApplyDPInit: n
 
 ## 安装
 
-1. 下载本仓库（或 `git clone`）
-2. 打开 Saleae Logic 2
-3. 左侧边栏 **Extensions** → 右上角 **`...`** → **Load Existing Extension...**
-4. 选中 **`extensions/optical_transceiver_hla`** 文件夹（选文件夹，不是文件）
+### 方式一：下载即用（推荐）
 
-加载成功后，Analyzers 面板点 `+` 即可看到 **`Optical Transceiver Decoder`**。
+从 **[Releases](https://github.com/makemk/optical-transceiver-hla/releases/latest)** 下载
+`Optical_Transceiver_HLA_v*.zip`，解压后：
+
+1. 打开 Saleae Logic 2
+2. 左侧边栏 **Extensions** → 右上角 **`...`** → **Load Existing Extension...**
+3. 选中解压出来的 **`optical_transceiver_hla` 文件夹**（选文件夹，不是文件）
+
+### 方式二：从源码
+
+```bash
+git clone https://github.com/makemk/optical-transceiver-hla.git
+```
+
+然后同上，选中仓库里的 `extensions/optical_transceiver_hla` 文件夹。
+
+---
+
+加载成功后，**Analyzers** 面板点 `+` 即可看到 **`Optical Transceiver Decoder`**。
 
 > 高级分析器建立在 I2C 之上，需要先添加 I2C 分析器再挂载本插件。
 > 详见 [插件使用说明](extensions/optical_transceiver_hla/README.md)。
