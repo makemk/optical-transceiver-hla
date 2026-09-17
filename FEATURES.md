@@ -180,13 +180,14 @@ WR 0x50 pg10 2B  | Page Select -> Page 0x10
 
 ### 2.8 一致性校验
 
-把工具从**翻译器**变成**检查器**。6 条规则，设置里可关闭：
+把工具从**翻译器**变成**检查器**。7 条检查、6 种发现（`monitor_flag_mismatch` 与
+`lane_monitor_flag_mismatch` 共用同一个发现 ID），设置里可关闭：
 
-| 规则 | 严重度 | 检查什么 |
+| 发现 | 严重度 | 检查什么 |
 | :--- | :--- | :--- |
-| `THRESHOLD_UNINITIALIZED` | warning | 门限为 0，即未编程 |
+| `THRESHOLD_UNINITIALIZED` | warning | 门限未编程（寄存器原值为 `0x0000` 或全 1）。**按编码原值判定**，不是按换算后的物理量 —— 否则 `0 °C` 这种合法门限会被误报 |
 | `THRESHOLD_ORDER` | warning | 报警与警告门限颠倒 |
-| `MONITOR_FLAG_MISMATCH` | warning | 监控量超门限但标志位是清的 —— **能抓标志寄存器映射错位** |
+| `MONITOR_FLAG_MISMATCH` | warning | 监控量超门限但标志位是清的 —— **能抓标志寄存器映射错位**。覆盖两级：模块级（00h:9 标志字节，温度/Vcc）与 per-lane 级（Page 11h 标志字节对应 Page 02h 门限） |
 | `WRITE_TO_READ_ONLY` | warning | 写整页只读的 Page 02h / 11h |
 | `PAGE_STALE` | info | 没选过页就读 upper memory |
 | `CDB_CHECK_CODE` | error | CDB 校验和不匹配（由解码器上报） |
@@ -195,6 +196,8 @@ WR 0x50 pg10 2B  | Page Select -> Page 0x10
 
 **触发与查表分离**：在本事务的字段上触发，用跨事务累积的状态查表 ——
 因为门限在 02h 的扫描里读、监控量在另一个事务里读，不这样它们永远对不上。
+
+**已判为未编程的门限不参与比较**：拿一个未编程的门限去和监控量比，只会产出一串连锁误报。
 
 ### 2.9 不确定性配置（`user_config.json`）
 
@@ -301,6 +304,7 @@ Start Firmware Transfer → Write Firmware Block ×N → Complete → Copy → R
 - 模块处于 `Fault` 态但 `ModuleFaultCause` 为 0
 - 固件版本为 `0xFF.0xFF`（无效加载）却报告 `Ready`
 - 门限与监控量长期矛盾（需跨多个事务统计）
+- ~~per-lane 监控量与 Page 11h 标志位的交叉检查~~ —— 已实现（见 §2.8）
 
 ---
 
