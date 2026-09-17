@@ -451,6 +451,13 @@ def main():
     check("an all-zero threshold is reported",
           'THRESHOLD_UNINITIALIZED' in messages(f), True)
 
+    b = Bus()
+    b.read(0x00, [0x18])
+    b.set_page(0x02)
+    f = b.read(134, [0xFF, 0xFF])
+    check("an all-ones threshold is reported before unit conversion",
+          'THRESHOLD_UNINITIALIZED' in messages(f), True)
+
     # Warm warning sitting ABOVE the warm alarm means it can never warn first.
     b = Bus()
     b.read(0x00, [0x18])
@@ -491,6 +498,29 @@ def main():
     b.read(128, [0x46, 0x00])
     f = b.read(14, [0x4E, 0x20])
     check("no finding when the flag byte was never read",
+          'MONITOR_FLAG_MISMATCH' in messages(f), False)
+
+    # The same consistency check applies to the per-lane Page 11 monitors.
+    # Page 02 thresholds are shared by the lanes, while the Page 11 flag bytes
+    # carry one bit per lane.
+    b = Bus()
+    b.read(0x00, [0x18])
+    b.set_page(0x02)
+    b.read(176, [0x15, 0x7C])               # Tx power HighAlarm = 550.0 uW
+    b.set_page(0x11)
+    b.read(139, [0x00])                     # Tx Power High Alarm flags clear
+    f = b.read(154, [0x1B, 0x58])           # lane 1 Tx power = 700.0 uW
+    check("lane monitor past its alarm with the lane flag clear is reported",
+          'MONITOR_FLAG_MISMATCH' in messages(f), True)
+
+    b = Bus()
+    b.read(0x00, [0x18])
+    b.set_page(0x02)
+    b.read(176, [0x15, 0x7C])
+    b.set_page(0x11)
+    b.read(139, [0x01])                     # lane 1 alarm flag set
+    f = b.read(154, [0x1B, 0x58])
+    check("no lane finding when the module raises the matching flag",
           'MONITOR_FLAG_MISMATCH' in messages(f), False)
 
     # REGRESSION: selecting page 02h is itself a write performed while the page

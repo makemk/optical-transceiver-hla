@@ -347,15 +347,17 @@ class CmisDecoder:
         if msb is None:
             return None
         name, unit, aux = spec
+        encoded = u16(msb, a.value)
         if unit == 'aux':
             # The scale follows 01h:145, so there may be no number to report.
-            return Field(name, self._aux_text(aux, msb, a.value), 'data')
+            return Field(name, self._aux_text(aux, msb, a.value), 'data',
+                         raw_encoded=encoded)
         if unit == 'mA':
             factor, _known = self._bias_state()
             return Field(name, self._bias_text(msb, a.value), 'data',
-                         raw=bias_ma(msb, a.value, factor))
+                         raw=bias_ma(msb, a.value, factor), raw_encoded=encoded)
         return Field(name, threshold_str(msb, a.value, unit), 'data',
-                     raw=threshold_value(msb, a.value, unit))
+                     raw=threshold_value(msb, a.value, unit), raw_encoded=encoded)
 
     def _page10(self, a, asm):
         # Staged Data Path control.
@@ -407,7 +409,7 @@ class CmisDecoder:
         if name is not None:
             lanes = lane_bitmap(a.value, count)
             text = "0x%02X" % a.value + (" (%s)" % lanes if lanes else " (none)")
-            return Field(name, text, 'control')
+            return Field(name, text, 'control', raw=a.value)
 
         if a.reg in regmap.PAGE11_OUTPUT_STATUS:
             # One bit per lane, 1 = the module declares that lane's output valid.
@@ -439,10 +441,13 @@ class CmisDecoder:
                 # than invent readings for lanes that do not exist.
                 return CONSUMED
             if unit == 'mA':
+                factor, _known = self._bias_state()
+                raw = bias_ma(msb, a.value, factor)
                 value = self._bias_text(msb, a.value)
             else:
-                value = power_str(power_uw(msb, a.value))
-            return Field(name_format % lane, value, 'data')
+                raw = power_uw(msb, a.value)
+                value = power_str(raw)
+            return Field(name_format % lane, value, 'data', raw=raw)
         return None
 
     def _config_status(self, a):

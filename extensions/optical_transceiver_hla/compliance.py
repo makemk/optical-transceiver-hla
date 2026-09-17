@@ -148,15 +148,19 @@ def threshold_uninitialized(fields, context):
     """
     findings = []
     for field in fields:
-        if 'Threshold' not in field.name or field.raw is None:
+        if 'Threshold' not in field.name:
             continue
-        if field.raw == 0.0:
+        encoded = getattr(field, 'raw_encoded', None)
+        if encoded == 0x0000:
             findings.append(Finding('THRESHOLD_UNINITIALIZED', WARNING,
                                     '%s is 0 - threshold not programmed' % field.name))
-        elif field.raw == 0xFFFF or field.raw == 0xFFFFFFFF:
+        elif encoded in (0xFFFF, 0xFFFFFFFF):
             findings.append(Finding('THRESHOLD_UNINITIALIZED', WARNING,
                                     '%s is all ones - threshold not programmed'
                                     % field.name))
+        elif encoded is None and field.raw == 0.0:
+            findings.append(Finding('THRESHOLD_UNINITIALIZED', WARNING,
+                                    '%s is 0 - threshold not programmed' % field.name))
     return findings
 
 
@@ -209,6 +213,19 @@ MONITOR_GROUPS = {
     'Supply Voltage Vcc': ('VccMon', 'Vcc'),
 }
 
+LANE_MONITOR_GROUPS = {
+    'OpticalPowerTx': ('OpticalPowerTx', 'Tx Power'),
+    'LaserBiasTx': ('LaserBias', 'Tx Bias'),
+    'OpticalPowerRx': ('OpticalPowerRx', 'Rx Power'),
+}
+
+LANE_FLAG_SUFFIXES = {
+    'HighAlarm': 'High Alarm Flags',
+    'LowAlarm': 'Low Alarm Flags',
+    'HighWarning': 'High Warn Flags',
+    'LowWarning': 'Low Warn Flags',
+}
+
 
 @rule
 def monitor_flag_mismatch(fields, context):
@@ -251,6 +268,59 @@ def monitor_flag_mismatch(fields, context):
     return findings
 
 
+@rule
+def lane_monitor_flag_mismatch(fields, context):
+    """A per-lane CMIS monitor outside a threshold with its lane flag clear."""
+    groups = _threshold_groups(context)
+    state = context.state or {}
+    if not groups or not state:
+        return []
+
+    findings = []
+    for field in fields:
+        if field.raw is None:
+            continue
+
+        matched = None
+        for prefix, spec in LANE_MONITOR_GROUPS.items():
+            if not field.name.startswith(prefix):
+                continue
+            lane_text = field.name[len(prefix):]
+            if lane_text.isdigit():
+                matched = (spec, int(lane_text))
+            break
+        if matched is None:
+            continue
+
+        (group, flag_prefix), lane = matched
+        if lane < 1 or lane > 8:
+            continue
+        band = groups.get(group)
+        if not band:
+            continue
+
+        for kind, suffix in LANE_FLAG_SUFFIXES.items():
+            limit = band.get(kind)
+            if limit is None:
+                continue
+            outside = field.raw > limit if kind.startswith('High') else field.raw < limit
+            if not outside:
+                continue
+
+            flag_name = '%s %s' % (flag_prefix, suffix)
+            flag_field = state.get(flag_name)
+            if flag_field is None or flag_field.raw is None:
+                continue
+            if int(flag_field.raw) & (1 << (lane - 1)):
+                continue
+
+            findings.append(Finding(
+                'MONITOR_FLAG_MISMATCH', WARNING,
+                '%s is %g, outside %s threshold %g, but lane %d is clear in %s'
+                % (field.name, field.raw, kind, limit, lane, flag_name)))
+    return findings
+
+
 _FLAG_BITS = ('TempHighAlarm', 'TempLowAlarm', 'TempHighWarn', 'TempLowWarn',
               'VccHighAlarm', 'VccLowAlarm', 'VccHighWarn', 'VccLowWarn')
 
@@ -287,6 +357,8 @@ def _threshold_groups(context):
     groups = {}
     for field in (context.state or {}).values():
         if field.raw is None:
+            continue
+        if getattr(field, 'raw_encoded', None) in (0x0000, 0xFFFF, 0xFFFFFFFF):
             continue
         parts = _split_threshold(field.name)
         if parts is None:

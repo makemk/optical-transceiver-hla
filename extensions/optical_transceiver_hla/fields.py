@@ -57,6 +57,10 @@ class Field(NamedTuple):
     where a number exists. Rendering never touches it - it exists so consistency
     checks can compare readings against thresholds without parsing the formatted
     string back into a number.
+
+    `raw_encoded` is the unscaled register value when that representation matters
+    to validation. CMIS supervision thresholds use it to distinguish sentinel
+    encodings such as 0x0000/0xFFFF from their converted engineering-unit value.
     """
 
     name: str
@@ -68,6 +72,7 @@ class Field(NamedTuple):
     # does not match the message it protects, say. Attached to the field they
     # concern; the compliance layer raises them like any other rule.
     findings: tuple = ()
+    raw_encoded: int = None
 
 
 class ControlEvent(NamedTuple):
